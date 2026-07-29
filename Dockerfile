@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for MUZIP (YouTube Audio & Playlist ZIP Downloader)
 
-# Stage 1: Build React Frontend
-FROM node:18-slim AS frontend-builder
+# Stage 1: Build React Frontend (Node 20+ required for Vite 6 / Rolldown)
+FROM node:20-slim AS frontend-builder
 
 WORKDIR /app
 
