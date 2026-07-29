@@ -115,16 +115,19 @@ def cleanup_temp_dir(dir_path: str):
 
 @app.get("/health", summary="System Health & Status Checklist")
 async def health_check():
-    """Returns system health, RAM usage percentage, active job count, and ffmpeg status."""
+    """Returns system health, process RAM, host RAM, active job count, and ffmpeg status."""
     mem = psutil.virtual_memory()
+    process = psutil.Process()
+    proc_mem = process.memory_info()
     ffmpeg_path = shutil.which("ffmpeg")
     ffmpeg_available = ffmpeg_path is not None
 
     return {
         "status": "healthy" if ffmpeg_available else "degraded",
-        "ram_usage_pct": mem.percent,
-        "ram_used_mb": round(mem.used / (1024 * 1024), 2),
-        "ram_total_mb": round(mem.total / (1024 * 1024), 2),
+        "process_ram_mb": round(proc_mem.rss / (1024 * 1024), 2),
+        "system_ram_usage_pct": mem.percent,
+        "system_ram_used_mb": round(mem.used / (1024 * 1024), 2),
+        "system_ram_total_mb": round(mem.total / (1024 * 1024), 2),
         "active_jobs": ACTIVE_JOBS,
         "ffmpeg": {
             "installed": ffmpeg_available,
