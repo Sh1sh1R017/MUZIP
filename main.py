@@ -21,6 +21,7 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
@@ -322,6 +323,21 @@ async def websocket_progress_endpoint(websocket: WebSocket, client_id: str):
     except Exception as e:
         logger.warning("WebSocket connection error for %s: %s", client_id, e)
         manager.disconnect(client_id)
+
+
+# Mount Production Built SPA Frontend Assets if present
+dist_dir = os.path.join(os.path.dirname(__file__), "dist")
+if os.path.exists(dist_dir):
+    assets_dir = os.path.join(dist_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}", response_class=FileResponse)
+    async def serve_spa(full_path: str):
+        file_path = os.path.join(dist_dir, full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(dist_dir, "index.html"))
 
 
 if __name__ == "__main__":
