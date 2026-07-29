@@ -5,7 +5,7 @@ import {
   FileText, ShieldCheck, Zap, AlertCircle, Music, Archive
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://muzip.onrender.com';
 
 export default function App() {
   const [url, setUrl] = useState('');
