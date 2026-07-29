@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://muzip.onrender.com';
+const DIRECT_AD_LINK = 'https://www.effectivecpmnetwork.com/bv6vbj58?key=f336c90c2e2a1666e1531ca7150dce82';
 
 export default function App() {
   const [url, setUrl] = useState('');
@@ -33,18 +34,6 @@ export default function App() {
   // Active FAQ Accordion state
   const [activeFaq, setActiveFaq] = useState('faq-0');
 
-  // WebSocket Telemetry state
-  const [telemetry, setTelemetry] = useState({
-    status: 'QUEUED',
-    currentTrackIndex: 1,
-    totalTracks: 1,
-    trackTitle: '',
-    trackProgress: 0,
-    overallProgress: 0,
-    speed: '0.0',
-    eta: 0
-  });
-
   const clientIdRef = useRef(crypto.randomUUID());
   const inputRef = useRef(null);
 
@@ -65,6 +54,21 @@ export default function App() {
     try {
       const saved = localStorage.getItem('muzip_history');
       if (saved) setDownloadHistory(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  // Dynamically inject ad script invoke.js if not present
+  useEffect(() => {
+    try {
+      const scriptId = 'effectivecpm-invoke-js';
+      if (!document.getElementById(scriptId)) {
+        const s = document.createElement('script');
+        s.id = scriptId;
+        s.async = true;
+        s.setAttribute('data-cfasync', 'false');
+        s.src = 'https://pl30584294.effectivecpmnetwork.com/2854c1a72dc16ad015ed569c49dbb4d4/invoke.js';
+        document.body.appendChild(s);
+      }
     } catch (e) {}
   }, []);
 
@@ -127,29 +131,6 @@ export default function App() {
       handleInspect(text.trim());
     }
   };
-
-  // System Health Polling from Real GET /health API
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/health`);
-        if (res.ok) {
-          const data = await res.json();
-          setHealth({
-            status: data.status,
-            ram: data.ram_usage_pct,
-            jobs: data.active_jobs,
-            ffmpeg: data.ffmpeg.installed
-          });
-        }
-      } catch (e) {
-        setHealth({ status: 'degraded', ram: 0, jobs: 0, ffmpeg: false });
-      }
-    };
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Inspect URL via POST /api/v1/info
   const handleInspect = async (overrideUrl) => {
@@ -263,13 +244,6 @@ export default function App() {
     }
   };
 
-  const [health, setHealth] = useState({
-    status: 'checking',
-    ram: 0,
-    jobs: 0,
-    ffmpeg: true
-  });
-
   return (
     <div className="min-h-screen flex flex-col justify-between font-sans antialiased transition-colors duration-200">
       
@@ -286,6 +260,15 @@ export default function App() {
 
           {/* Right Nav Links */}
           <div className="flex items-center space-x-4 sm:space-x-6 text-sm font-medium dark:text-[#A1A1AA] text-slate-600">
+            <a 
+              href={DIRECT_AD_LINK} 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-[#7CFF00] hover:underline font-semibold text-xs hidden sm:flex items-center space-x-1"
+            >
+              <span>🔥 Deals</span>
+            </a>
+
             <button 
               onClick={() => setHistoryOpen(true)}
               className="hover:dark:text-white hover:text-slate-900 transition-colors flex items-center space-x-1.5 cursor-pointer"
@@ -328,13 +311,8 @@ export default function App() {
         
         {/* 2. LARGE ADVERTISEMENT AREA (Top ~970x250 Desktop) */}
         <div className="w-full my-8">
-          <div className="ad-banner-container w-full h-[180px] md:h-[230px] p-6 text-center">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold tracking-wider uppercase dark:text-[#6B7280] text-slate-500">
-                Advertisement
-              </span>
-              <p className="text-xs dark:text-[#A1A1AA] text-slate-600">Responsive Ad Banner Placeholder (970 × 250)</p>
-            </div>
+          <div className="ad-banner-container w-full min-h-[180px] md:min-h-[230px] p-4 text-center overflow-hidden flex justify-center items-center">
+            <div id="container-2854c1a72dc16ad015ed569c49dbb4d4" className="w-full flex justify-center items-center"></div>
           </div>
         </div>
 
@@ -411,8 +389,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* 5. SECONDARY ACTION */}
-        <div className="my-3 flex justify-center">
+        {/* 5. SECONDARY ACTION & DIRECT AD LINK */}
+        <div className="my-3 flex flex-wrap items-center justify-center gap-3">
           <button 
             onClick={handlePasteClipboard}
             className="btn-shishir-secondary px-4 py-2.5 text-xs flex items-center space-x-2 cursor-pointer"
@@ -420,6 +398,16 @@ export default function App() {
             <Clipboard className="w-3.5 h-3.5 text-[#7CFF00]" />
             <span>Paste from Clipboard</span>
           </button>
+
+          <a 
+            href={DIRECT_AD_LINK} 
+            target="_blank" 
+            rel="noreferrer"
+            className="btn-shishir-secondary px-4 py-2.5 text-xs flex items-center space-x-2 text-[#7CFF00] border-[#7CFF00]/30 hover:border-[#7CFF00]"
+          >
+            <Zap className="w-3.5 h-3.5 text-[#7CFF00]" />
+            <span>Sponsored Deals</span>
+          </a>
         </div>
 
         {/* 6. TINY FEATURE ROW */}
@@ -546,13 +534,16 @@ export default function App() {
 
         {/* 7. MASSIVE ADVERTISEMENT AREA (Bottom ~970x280 Desktop) */}
         <div className="w-full my-12">
-          <div className="ad-banner-container w-full h-[200px] md:h-[260px] p-6 text-center">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold tracking-wider uppercase dark:text-[#6B7280] text-slate-500">
-                Advertisement
-              </span>
-              <p className="text-xs dark:text-[#A1A1AA] text-slate-600">Massive Responsive Ad Container (970 × 280)</p>
-            </div>
+          <div className="ad-banner-container w-full min-h-[200px] md:min-h-[260px] p-4 text-center overflow-hidden flex flex-col justify-center items-center">
+            <div id="container-2854c1a72dc16ad015ed569c49dbb4d4" className="w-full flex justify-center items-center"></div>
+            <a 
+              href={DIRECT_AD_LINK} 
+              target="_blank" 
+              rel="noreferrer"
+              className="mt-3 text-xs text-[#7CFF00] hover:underline font-semibold flex items-center space-x-1"
+            >
+              <span>🔥 Sponsored Deals & Partner Offers</span>
+            </a>
           </div>
         </div>
 
@@ -661,6 +652,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center space-x-6 dark:text-[#A1A1AA] text-slate-600">
+            <a href={DIRECT_AD_LINK} target="_blank" rel="noreferrer" className="text-[#7CFF00] hover:underline font-semibold">Special Offers</a>
             <a href="#privacy" className="hover:dark:text-white hover:text-black transition-colors">Privacy Policy</a>
             <a href="#terms" className="hover:dark:text-white hover:text-black transition-colors">Terms of Service</a>
           </div>
