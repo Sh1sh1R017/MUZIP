@@ -5,6 +5,8 @@ import {
   FileText, ShieldCheck, Zap, AlertCircle, Music, Archive
 } from 'lucide-react';
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export default function App() {
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -24,6 +26,29 @@ export default function App() {
     }
   });
 
+  // Navigation & Drawer states
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [downloadHistory, setDownloadHistory] = useState([]);
+  
+  // Active FAQ Accordion state
+  const [activeFaq, setActiveFaq] = useState('faq-0');
+
+  // WebSocket Telemetry state
+  const [telemetry, setTelemetry] = useState({
+    status: 'QUEUED',
+    currentTrackIndex: 1,
+    totalTracks: 1,
+    trackTitle: '',
+    trackProgress: 0,
+    overallProgress: 0,
+    speed: '0.0',
+    eta: 0
+  });
+
+  const clientIdRef = useRef(crypto.randomUUID());
+  const inputRef = useRef(null);
+
+  // Load and apply theme preference
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -103,6 +128,29 @@ export default function App() {
     }
   };
 
+  // System Health Polling from Real GET /health API
+  useEffect(() => {
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        if (res.ok) {
+          const data = await res.json();
+          setHealth({
+            status: data.status,
+            ram: data.ram_usage_pct,
+            jobs: data.active_jobs,
+            ffmpeg: data.ffmpeg.installed
+          });
+        }
+      } catch (e) {
+        setHealth({ status: 'degraded', ram: 0, jobs: 0, ffmpeg: false });
+      }
+    };
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Inspect URL via POST /api/v1/info
   const handleInspect = async (overrideUrl) => {
     const targetQuery = (overrideUrl || url).trim();
@@ -118,7 +166,7 @@ export default function App() {
     }
 
     try {
-      const response = await fetch('/api/v1/info', {
+      const response = await fetch(`${API_BASE}/api/v1/info`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: targetUrl })
@@ -148,7 +196,7 @@ export default function App() {
     setErrorMsg(null);
 
     const isZip = mode === 'zip';
-    const endpoint = isZip ? '/api/v1/download/playlist' : '/api/v1/download/single';
+    const endpoint = isZip ? `${API_BASE}/api/v1/download/playlist` : `${API_BASE}/api/v1/download/single`;
     const downloadQuery = metadata.tracks && metadata.tracks.length > 0 ? metadata.tracks[0].url : url.trim();
 
     try {
@@ -215,6 +263,13 @@ export default function App() {
     }
   };
 
+  const [health, setHealth] = useState({
+    status: 'checking',
+    ram: 0,
+    jobs: 0,
+    ffmpeg: true
+  });
+
   return (
     <div className="min-h-screen flex flex-col justify-between font-sans antialiased transition-colors duration-200">
       
@@ -233,7 +288,7 @@ export default function App() {
           <div className="flex items-center space-x-4 sm:space-x-6 text-sm font-medium dark:text-[#A1A1AA] text-slate-600">
             <button 
               onClick={() => setHistoryOpen(true)}
-              className="hover:dark:text-white hover:text-slate-900 transition-colors flex items-center space-x-1.5"
+              className="hover:dark:text-white hover:text-slate-900 transition-colors flex items-center space-x-1.5 cursor-pointer"
             >
               <History className="w-4 h-4 text-[#7CFF00]" />
               <span>History</span>
@@ -243,7 +298,7 @@ export default function App() {
               onClick={() => {
                 document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="hover:dark:text-white hover:text-slate-900 transition-colors flex items-center space-x-1.5"
+              className="hover:dark:text-white hover:text-slate-900 transition-colors flex items-center space-x-1.5 cursor-pointer"
             >
               <HelpCircle className="w-4 h-4" />
               <span>FAQ</span>
@@ -321,7 +376,7 @@ export default function App() {
               {url && (
                 <button 
                   onClick={() => { setUrl(''); setMetadata(null); setErrorMsg(null); }}
-                  className="absolute right-4 dark:text-[#A1A1AA] text-slate-500 hover:text-black dark:hover:text-white p-1"
+                  className="absolute right-4 dark:text-[#A1A1AA] text-slate-500 hover:text-black dark:hover:text-white p-1 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -560,7 +615,7 @@ export default function App() {
                 <History className="w-5 h-5 text-[#7CFF00]" />
                 <h3 className="text-lg font-bold dark:text-white text-slate-900">Download History</h3>
               </div>
-              <button onClick={() => setHistoryOpen(false)} className="dark:text-[#A1A1AA] text-slate-500 hover:text-black dark:hover:text-white">
+              <button onClick={() => setHistoryOpen(false)} className="dark:text-[#A1A1AA] text-slate-500 hover:text-black dark:hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -594,7 +649,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 8. FOOTER (Minimal - Theme aware) */}
+      {/* 8. FOOTER (Minimal) */}
       <footer className="w-full border-t border-[#27272A] bg-[#080B0E] py-8 mt-12 text-xs dark:text-[#6B7280] text-slate-500">
         <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           
