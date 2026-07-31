@@ -5,8 +5,19 @@ import {
   FileText, ShieldCheck, Zap, AlertCircle, Music, Archive
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://muzip.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const DIRECT_AD_LINK = 'https://www.effectivecpmnetwork.com/bv6vbj58?key=f336c90c2e2a1666e1531ca7150dce82';
+const YOUTUBE_INPUT_RE = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:music\.)?(?:youtube\.com|youtu\.be)\//i;
+
+const normalizeMediaQuery = (input) => {
+  const value = input.trim();
+
+  if (!value) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (YOUTUBE_INPUT_RE.test(value)) return `https://${value.replace(/^\/+/, '')}`;
+
+  return `ytsearch1:${value}`;
+};
 
 export default function App() {
   const [url, setUrl] = useState('');
@@ -141,10 +152,7 @@ export default function App() {
     setErrorMsg(null);
     setMetadata(null);
 
-    let targetUrl = targetQuery;
-    if (!targetQuery.startsWith('http://') && !targetQuery.startsWith('https://')) {
-      targetUrl = `ytsearch1:${targetQuery}`;
-    }
+    const targetUrl = normalizeMediaQuery(targetQuery);
 
     try {
       const response = await fetch(`${API_BASE}/api/v1/info`, {

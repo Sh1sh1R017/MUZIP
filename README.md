@@ -77,6 +77,12 @@ npm run dev
 
 Open your browser at `http://localhost:5173`.
 
+### Azure Container Apps: Single-Container Setup
+
+If you deploy MUZIP as a single Azure Container App, the frontend now talks to the FastAPI backend on the same origin by default, so you do not need to set `VITE_API_URL`.
+
+The app also normalizes pasted YouTube links that are missing `https://`, so `youtube.com/watch?...` and `youtu.be/...` inputs are handled correctly instead of being treated as search queries.
+
 ---
 
 ## 🐳 Docker Deployment

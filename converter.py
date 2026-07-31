@@ -23,6 +23,11 @@ from mutagen.id3 import ID3, TIT2, TPE1, TALB, TDRC, APIC, ID3NoHeaderError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+YOUTUBE_INPUT_RE = re.compile(
+    r"^(?:https?://)?(?:www\.)?(?:m\.)?(?:music\.)?(?:youtube\.com|youtu\.be)/",
+    re.IGNORECASE,
+)
+
 # Max worker threads for parallel track downloads
 MAX_WORKER_THREADS = 4
 executor = ThreadPoolExecutor(max_workers=MAX_WORKER_THREADS)
@@ -37,6 +42,24 @@ def sanitize_filename(name: str) -> str:
     clean = re.sub(r'[\\/*?:"<>|]', "_", name)
     clean = re.sub(r"\s+", " ", clean).strip()
     return clean or "audio_track"
+
+
+def normalize_media_query(value: str) -> str:
+    """Convert pasted YouTube URLs without a scheme into a fetchable form."""
+    cleaned = (value or "").strip()
+    if not cleaned:
+        return cleaned
+
+    if cleaned.startswith("ytsearch"):
+        return cleaned
+
+    if cleaned.startswith("http://") or cleaned.startswith("https://"):
+        return cleaned
+
+    if YOUTUBE_INPUT_RE.match(cleaned):
+        return f"https://{cleaned.lstrip('/')}"
+
+    return f"ytsearch1:{cleaned}"
 
 
 def clean_search_term(title: str) -> str:
@@ -171,7 +194,8 @@ async def extract_url_info(url: str) -> Dict[str, Any]:
     Extract structured metadata from YouTube URL (video or playlist).
     Queries iTunes API to enrich artist, album, and high-res cover art.
     """
-    cached = get_cached_metadata(url)
+    source = normalize_media_query(url)
+    cached = get_cached_metadata(source)
     if cached:
         return cached
 
@@ -181,10 +205,10 @@ async def extract_url_info(url: str) -> Dict[str, Any]:
             "skip_download": True,
             "quiet": True,
             "no_warnings": True,
-            "ignoreerrors": True,
+            "ignoreerrors": False,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+            info = ydl.extract_info(source, download=False)
             if not info:
                 raise ValueError("Could not fetch metadata for the provided URL.")
             return info
@@ -274,7 +298,7 @@ async def extract_url_info(url: str) -> Dict[str, Any]:
             "tracks": [track_data],
         }
 
-    set_cached_metadata(url, result)
+    set_cached_metadata(source, result)
     return result
 
 
