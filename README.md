@@ -83,6 +83,13 @@ If you deploy MUZIP as a single Azure Container App, the frontend now talks to t
 
 The app also normalizes pasted YouTube links that are missing `https://`, so `youtube.com/watch?...` and `youtu.be/...` inputs are handled correctly instead of being treated as search queries.
 
+If yt-dlp still errors on metadata extraction because the site requires login or CAPTCHA solving, set one of these environment variables in the Container App and redeploy the revision:
+
+- `YTDLP_COOKIES_FILE` for a mounted Mozilla/Netscape cookies file
+- `YTDLP_COOKIES_FROM_BROWSER` for browser extraction, such as `chrome` or `chrome:~/.var/app/com.google.Chrome/`
+
+The cookies file must start with `# HTTP Cookie File` or `# Netscape HTTP Cookie File`.
+
 ---
 
 ## 🐳 Docker Deployment

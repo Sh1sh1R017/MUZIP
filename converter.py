@@ -37,6 +37,28 @@ _METADATA_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
 CACHE_TTL_SECONDS = 3600  # 1 hour cache TTL
 
 
+def _build_ydl_auth_options() -> Dict[str, Any]:
+    """Build yt-dlp authentication options from environment variables."""
+    cookie_file = os.getenv("YTDLP_COOKIES_FILE", "").strip()
+    cookies_from_browser = os.getenv("YTDLP_COOKIES_FROM_BROWSER", "").strip()
+
+    auth_options: Dict[str, Any] = {}
+
+    if cookie_file:
+        auth_options["cookiefile"] = os.path.expanduser(cookie_file)
+    elif cookies_from_browser:
+        auth_options["cookiesfrombrowser"] = cookies_from_browser
+
+    return auth_options
+
+
+def _build_ydl_options(base_options: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge shared yt-dlp options with authentication settings."""
+    merged_options = dict(base_options)
+    merged_options.update(_build_ydl_auth_options())
+    return merged_options
+
+
 def sanitize_filename(name: str) -> str:
     """Sanitize string for clean, safe filenames across platforms."""
     clean = re.sub(r'[\\/*?:"<>|]', "_", name)
@@ -200,13 +222,14 @@ async def extract_url_info(url: str) -> Dict[str, Any]:
         return cached
 
     def _fetch():
-        ydl_opts = {
+        ydl_opts = _build_ydl_options({
             "extract_flat": "in_playlist",
             "skip_download": True,
             "quiet": True,
             "no_warnings": True,
             "ignoreerrors": False,
-        }
+            "nocheckcertificate": True,
+        })
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(source, download=False)
             if not info:
@@ -392,7 +415,7 @@ def download_single_track_sync(
         callback=progress_callback,
     )
 
-    ydl_opts = {
+    ydl_opts = _build_ydl_options({
         "format": "bestaudio/best",
         "outtmpl": out_template,
         "quiet": True,
@@ -415,7 +438,7 @@ def download_single_track_sync(
             "-q:a", "0",
         ],
         "progress_hooks": [hook],
-    }
+    })
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
